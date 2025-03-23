@@ -33,6 +33,9 @@ packer init .
 packer build .
 ```
 
+![Custom AMI Created](/.images/custom_ami_created.png)
+*Successfully created custom AMI with Packer*
+
 ## Step 2: Provision Infrastructure with Terraform
 
 ### Update Configuration
@@ -59,6 +62,17 @@ terraform fmt
 # Create the infrastructure
 terraform apply
 ```
+![VPC Architecture](.images/VPC.png)
+*VPC architecture with public and private subnets*
+
+![Security Groups Created](/.images/security_created.png)
+*Security groups successfully created*
+
+![Subnets Created](/.images/subnet_created.png)
+*Public and private subnets created across availability zones*
+
+![Terraform Output](/.images/terraform_output.png)
+*Terraform outputs showing the created resources*
 
 ### Access Your Instances
 
@@ -80,11 +94,17 @@ terraform apply
    ```bash
    ssh ec2-user@<bastion-public-ip>
    ```
+   
+   ![Login to Bastion Host](/.images/login_public_ip.png)
+   *Successfully connected to the bastion host*
 
 4. From the bastion, connect to any private instance:
    ```bash
    ssh ec2-user@<private-instance-ip>
    ```
+   
+   ![Login to Private Instance](/.images/login_private_ip.png)
+   *Connected to a private instance through the bastion host*
 
 ## Infrastructure Architecture
 
