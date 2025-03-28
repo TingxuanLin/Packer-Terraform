@@ -64,6 +64,39 @@ The script will:
 4. Set up Ansible on the controller
 5. Run the Ansible playbook
 
+
+## Execution Examples
+
+### Starting the Ansible Playbook
+The playbook begins execution, targeting all EC2 instances:
+
+![Running Playbook](https://github.com/TingxuanLin/Packer-Terraform/blob/assignment10/.images/running%20playbook.png)
+*The Ansible playbook starting execution against all managed hosts*
+
+### Testing Connection to Instances
+Ansible tests connectivity to all nodes before beginning configuration tasks:
+
+![Testing Connections](https://github.com/TingxuanLin/Packer-Terraform/blob/assignment10/.images/test_connection.png)
+*Successful ping test to all managed instances showing the discovered Python interpreters*
+
+### Package Updates and Upgrades
+The playbook updates packages on all instances based on their OS type:
+
+![Package Updates](https://github.com/TingxuanLin/Packer-Terraform/blob/assignment10/.images/update%26upgarde.png)
+*Package update process running on the managed instances*
+
+### Docker Version Check
+The playbook verifies Docker installations across all instances:
+
+![Docker Check](https://github.com/TingxuanLin/Packer-Terraform/blob/assignment10/.images/check_docker_version.png)
+*Docker version information collected from all instances*
+
+### Disk Usage Report
+The playbook generates a comprehensive disk usage report from all instances:
+
+![Disk Usage Report](https://github.com/TingxuanLin/Packer-Terraform/blob/assignment10/.images/output%20usage.png)
+*Disk usage information displayed for each managed instance*
+
 ## Infrastructure Architecture
 
 - **VPC**: A dedicated Virtual Private Cloud with CIDR range 10.0.0.0/16
@@ -112,3 +145,4 @@ terraform destroy
 - [Ansible Documentation](https://docs.ansible.com/)
 - [AWS VPC Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
 - [AWS NAT Gateway Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html)
+
