@@ -54,6 +54,28 @@ source "amazon-ebs" "amazon_linux" {
   ami_description = "Custom Amazon Linux AMI with Docker and SSH key pre-installed"
 }
 
+source "amazon-ebs" "ubuntu" {
+  access_key    = var.aws_access_key
+  secret_key    = var.aws_secret_key
+  token         = var.aws_session_token
+  region        = var.region
+  instance_type = "t2.micro"
+  ssh_username  = "ubuntu"
+  
+  source_ami_filter {
+    filters = {
+      name                = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = ["099720109477"] # Canonical's owner ID
+  }
+  
+  ami_name        = "custom-ubuntu-docker-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
+  ami_description = "Custom Ubuntu 22.04 AMI with Docker and SSH key pre-installed"
+}
+
 build {
   sources = ["source.amazon-ebs.amazon_linux"]
 
@@ -64,6 +86,37 @@ build {
       "sudo systemctl enable docker",
       "sudo systemctl start docker",
       "sudo usermod -a -G docker ec2-user",
+      "echo 'Docker installation completed.'"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "echo 'Setting up SSH access...'",
+      "mkdir -p ~/.ssh",
+      "chmod 700 ~/.ssh",
+      "echo '${var.ssh_public_key}' >> ~/.ssh/authorized_keys",
+      "chmod 600 ~/.ssh/authorized_keys",
+      "echo 'SSH setup completed.'"
+    ]
+  }
+}
+
+build {
+  sources = ["source.amazon-ebs.ubuntu"]
+
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing Docker...'",
+      "sudo apt-get update",
+      "sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common",
+      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+      "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"",
+      "sudo apt-get update",
+      "sudo apt-get install -y docker-ce docker-ce-cli containerd.io",
+      "sudo systemctl enable docker",
+      "sudo systemctl start docker",
+      "sudo usermod -a -G docker ubuntu",
       "echo 'Docker installation completed.'"
     ]
   }
