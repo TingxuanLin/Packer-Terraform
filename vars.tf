@@ -16,14 +16,17 @@ variable "ZONE3" {
 
 variable "AMIS" {
   default = {
-    us-east-1 = "CUSTOM AMI"
+    us-east-1 = {
+      "amazon" = "amz-ami"
+      "ubuntu" = "ubuntu-ami"
+    }
   }
 }
 
 variable "USER" {
-  default = "ec2-user"
+  default = "ubuntu"
 }
 
 variable "MYIP" {
-  default = "MY IP"
+  default = "my_ip"
 }
