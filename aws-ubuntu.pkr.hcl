@@ -108,12 +108,16 @@ build {
   provisioner "shell" {
     inline = [
       "echo 'Installing Docker...'",
-      "sudo apt-get update",
-      "sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common",
+      # Add retry logic for apt-get update
+      "for i in {1..5}; do sudo apt-get update && break || { echo 'apt-get update failed, retrying in 30 seconds...'; sleep 30; }; done",
+      # Add retry logic for package installation
+      "for i in {1..3}; do sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common && break || { echo 'Package installation failed, retrying in 30 seconds...'; sleep 30; }; done",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
       "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"",
-      "sudo apt-get update",
-      "sudo apt-get install -y docker-ce docker-ce-cli containerd.io",
+      # Add retry logic for second apt-get update
+      "for i in {1..5}; do sudo apt-get update && break || { echo 'apt-get update failed, retrying in 30 seconds...'; sleep 30; }; done",
+      # Add retry logic for docker installation
+      "for i in {1..3}; do sudo apt-get install -y docker-ce docker-ce-cli containerd.io && break || { echo 'Docker installation failed, retrying in 30 seconds...'; sleep 30; }; done",
       "sudo systemctl enable docker",
       "sudo systemctl start docker",
       "sudo usermod -a -G docker ubuntu",
