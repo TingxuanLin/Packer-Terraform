@@ -1,10 +1,25 @@
-# Packer-Terraform AWS Infrastructure Guide
+# AWS Infrastructure with Terraform and Ansible
 
-This guide walks you through creating a custom Amazon Machine Image (AMI) with Packer and then using Terraform to provision a secure infrastructure with a bastion host and private instances.
+This project sets up a complete AWS infrastructure using Terraform and configures the instances using Ansible. The infrastructure includes a VPC with public and private subnets, a NAT Gateway for internet access from private instances, and EC2 instances with proper security groups.
 
-## Step 1: Creating a Custom AMI with Packer
+## Prerequisites
+
+Before you begin, make sure you have the following installed on your local machine:
+
+- **AWS CLI** - For authentication and access to AWS resources
+- **Terraform** (version 1.0.0 or newer) - For infrastructure provisioning
+- **Packer** (optional) - For creating custom AMIs
+- **jq** - For JSON processing in the automation scripts
+- **SSH Client** - For accessing the EC2 instances
+
+## Setup Instructions
+
+### 1. Configure AWS Credentials
 
 ### Prepare SSH Keys
+
+make sure adding privatekey.pem under your folder
+
 ```bash
 # Set correct permissions for your private key
 chmod 600 private-key.pem
@@ -14,6 +29,7 @@ ssh-keygen -y -f /path/to/your/private-key.pem > publickey.pub
 ```
 
 ### Configure AWS Credentials
+
 ```bash
 # Export your AWS credentials as environment variables
 export AWS_ACCESS_KEY_ID=your_access_key
@@ -24,100 +40,75 @@ export AWS_SESSION_TOKEN=your_session_token  # if using temporary credentials
 export SSH_PUBLIC_KEY=$(cat publickey.pub)
 ```
 
-### Build the AMI with Packer
-```bash
-# Initialize Packer plugins
-packer init .
-
-# Build the custom AMI
-packer build .
 ```
 
-![Custom AMI Created](/.images/custom_ami_created.png)
-*Successfully created custom AMI with Packer*
-
-## Step 2: Provision Infrastructure with Terraform
-
-### Update Configuration
-1. Get your current public IP address:
-   ```bash
-   curl -4 icanhazip.com
-   ```
-
-2. Update `vars.tf` with:
-   - Your public IP address (format: x.x.x.x/32)
-   - The AMI ID from the Packer build output
-
-### Provision Resources
-```bash
-# Initialize Terraform
-terraform init
-
-# Validate the configuration
-terraform validate
-
-# Format the configuration files
-terraform fmt
-
-# Create the infrastructure
-terraform apply
 ```
-![VPC Architecture](.images/VPC.png)
-*VPC architecture with public and private subnets*
 
-![Security Groups Created](/.images/security_created.png)
-*Security groups successfully created*
+## Using the Automation Script
 
-![Subnets Created](/.images/subnet_created.png)
-*Public and private subnets created across availability zones*
+For a fully automated setup, use the provided automation script:
 
-![Terraform Output](/.images/terraform_output.png)
-*Terraform outputs showing the created resources*
+```bash
+# Make the script executable
+chmod +x scripts/aws-infrastructure-automation.sh
 
-### Access Your Instances
+# Run the script (make sure your privatekey.pem is in the current directory)
+./scripts/aws-infrastructure-automation.sh
+```
 
-1. Extract the IP addresses from Terraform outputs:
-   ```bash
-   # Get the public IP of the bastion host
-   terraform output BastionPublicIP
-   
-   # Get the private IPs of your instances
-   terraform output PrivateIPs
-   ```
+The script will:
 
-2. Add your private key to the SSH agent:
-   ```bash
-   ssh-add /path/to/your/privatekey.pem
-   ```
-
-3. Connect to the bastion host:
-   ```bash
-   ssh ec2-user@<bastion-public-ip>
-   ```
-   
-   ![Login to Bastion Host](/.images/login_public_ip.png)
-   *Successfully connected to the bastion host*
-
-4. From the bastion, connect to any private instance:
-   ```bash
-   ssh ec2-user@<private-instance-ip>
-   ```
-   
-   ![Login to Private Instance](/.images/login_private_ip.png)
-   *Connected to a private instance through the bastion host*
+1. Check for prerequisites
+2. Build custom AMIs with Packer (if configured)
+3. Deploy the infrastructure with Terraform
+4. Set up Ansible on the controller
+5. Run the Ansible playbook
 
 ## Infrastructure Architecture
 
-- **VPC**: Isolated network environment with public and private subnets
-- **Bastion Host**: Located in a public subnet, accessible only from your IP address
-- **Private Instances**: 6 EC2 instances in private subnets, accessible only through the bastion host
-- **Security**: Restricted SSH access and proper network segmentation
+- **VPC**: A dedicated Virtual Private Cloud with CIDR range 10.0.0.0/16
+- **Subnets**:
+  - 3 Public Subnets (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
+  - 3 Private Subnets (10.0.4.0/24, 10.0.5.0/24, 10.0.6.0/24)
+- **NAT Gateway**: Allows private instances to access the internet
+- **Internet Gateway**: Provides public instances with internet access
+- **EC2 Instances**:
+  - 1 Public instance serving as Ansible controller
+  - 3 Ubuntu instances in private subnets
+  - 3 Amazon Linux instances in private subnets
+
+## Security
+
+- Private instances are not directly accessible from the internet
+- Only the Ansible controller has a public IP and is accessible via SSH
+- Security groups restrict traffic to necessary ports only
+- All communication between the controller and private instances uses the private key
 
 ## Cleanup
 
-When you're done with the infrastructure:
+To avoid incurring charges, remove all resources when done:
+
 ```bash
 terraform destroy
 ```
 
-This will remove all AWS resources created by Terraform to avoid ongoing charges.
+## Troubleshooting
+
+### Issue: Private instances can't access the internet
+
+- Verify the NAT Gateway is created and associated with the private route table
+- Check that private subnets have `map_public_ip_on_launch = false`
+- Ensure the private route table has a route for 0.0.0.0/0 pointing to the NAT Gateway
+
+### Issue: Ansible playbook fails with connection errors
+
+- Verify SSH key permissions (should be 600)
+- Check security groups to ensure the controller can reach private instances on port 22
+- Verify the inventory file has the correct private IPs
+
+## Additional Resources
+
+- [Terraform Documentation](https://www.terraform.io/docs)
+- [Ansible Documentation](https://docs.ansible.com/)
+- [AWS VPC Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
+- [AWS NAT Gateway Documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html)
